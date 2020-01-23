@@ -18,6 +18,7 @@ const disk = require("diskusage");
 const os = require("os");
 let free = require("free-memory");
 const CustomError = require("./CustomError");
+const Response = require("./Response");
 
 /**
  * @name config
@@ -140,25 +141,7 @@ function getMemory() {
 socket.on("disconnect", () => console.log("Signal-C connect down"));
 module.exports = Object.freeze({
   config,
-  exec
+  exec,
+  CustomError,
+  Response
 });
-
-// {
-//   connector: {
-//     url: process.env.SIGNALC,
-//     auditorium: "autenticacao",
-//     status: {
-//       name: "authentication1",
-//       hd: -1,
-//       memory: -1
-//     },
-//     signals: [
-//       "addUser",
-//       "delUser",
-//       "login",
-//       "updateUser",
-//       "setCreatedAuthentication"
-//     ],
-//     sent_at: new Date()
-//   }
-// }

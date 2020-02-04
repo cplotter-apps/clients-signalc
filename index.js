@@ -22,24 +22,31 @@ const Response = require("./Response");
 
 /**
  * @name config
- * @param {Connector} connector
+ * @param {url:string, auditorium:string, signals:string[], name:string} connector
  */
-function config(connector) {
-  socket = io.connect(connector.url, { reconnect: true });
-  console.log(connector.url);
+function config({url, auditorium, signals, name}={}) {
+  socket = io.connect(url, { reconnect: true });
+  console.log(url);
   socket.on("connect", async () => {
-    console.log("Client Connected!!!!!!!!!!!!!", socket.id);
+    console.log("%c Client Connected! %s", "color:green;", socket.id);
     let hd = -1;
     let memory = -1;
     try {
       hd = await getHd();
       memory = await getMemory();
     } catch (err) {}
-    connector.status.hd = hd;
-    connector.status.memory = memory;
-    connector.sent_at = new Date();
 
-    enter(connector);
+    enter({
+      url,
+      auditorium,
+      sent_at: new Date(),
+      signals,
+      status:{
+        hd,
+        memory,
+        name
+      }
+    });
   });
 }
 //TODO: COLOCAR AS VARIÁVEIS NAS VARIÁVEIS DE AMBIENTE
@@ -56,7 +63,7 @@ function enter(connector) {
  * @name exec
  * @param {{signal:string, callBack:Function,onSuccess:Function, onFail:Function}} param0
  */
-function exec({ signal, callBack, onSuccess, onFail } = {}) {
+async function exec({ signal, callBack, onSuccess, onFail } = {}) {
   socket.on(signal, async data => {
     if (typeof callBack != "function") {
       return reject(

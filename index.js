@@ -27,6 +27,7 @@
 
 /**
  * @callback execCallback
+ * @param {{id:string, body:Object}} data
  * @param {sendCallback} send
  */
 
@@ -101,7 +102,7 @@ async function exec(signal, cb) {
       })
     }
   
-    cb(next)
+    cb(data, next)
     
   });
 }

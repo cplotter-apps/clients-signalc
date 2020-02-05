@@ -12,6 +12,24 @@
  * @property {Array<string>} signals
  * @property {Date} sent_at
  */
+
+/**
+ * @typedef ResolvedToSend
+ * @property {{message:string, data:Object, name:string}} body
+ * @property {number} status
+ */
+
+/**
+ * @callback sendCallback 
+ * @param {ResolvedToSend} resolvedToSend
+ * @returns {Promise<Object>}
+ */
+
+/**
+ * @callback execCallback
+ * @param {sendCallback} send
+ */
+
 let io = require("socket.io-client");
 let socket = io.connect();
 const disk = require("diskusage");
@@ -22,13 +40,13 @@ const Response = require("./Response");
 
 /**
  * @name config
- * @param {url:string, auditorium:string, signals:string[], name:string} connector
+ * @param {{url:string, auditorium:string, signals:string[], name:string}} param0
  */
 function config({url, auditorium, signals, name}={}) {
   socket = io.connect(url, { reconnect: true });
   console.log(url);
   socket.on("connect", async () => {
-    console.log("%c Client Connected! %s", "color:green;", socket.id);
+    console.log("Client Connected!",socket.id);
     let hd = -1;
     let memory = -1;
     try {
@@ -49,7 +67,6 @@ function config({url, auditorium, signals, name}={}) {
     });
   });
 }
-//TODO: COLOCAR AS VARIÁVEIS NAS VARIÁVEIS DE AMBIENTE
 
 /**
  * enter
@@ -61,52 +78,31 @@ function enter(connector) {
 
 /**
  * @name exec
- * @param {{signal:string, callBack:Function,onSuccess:Function, onFail:Function}} param0
+ * @param {string} signal
+ * @param {execCallback} cb 
  */
-async function exec({ signal, callBack, onSuccess, onFail } = {}) {
+async function exec(signal, cb) {
   socket.on(signal, async data => {
-    if (typeof callBack != "function") {
-      return reject(
-        new CustomError({
-          name: "CallbackException",
-          message: "O parametro Callback informado não é uma função",
-          body: {}
-        })
-      );
+    
+    function next(resolved){
+      return new Promise((resolve, reject)=>{
+        socket.emit(data.id, resolved);
+
+        socket.on(`${data.id}:success`, () => {
+          socket.off(`${data.id}:success`);
+          socket.off(`${data.id}:fail`);
+          resolve(data);
+        });
+        socket.on(`${data.id}:fail`, error => {
+          socket.off(`${data.id}:success`);
+          socket.off(`${data.id}:fail`);
+          reject(error);
+        });
+      })
     }
-    if (typeof onSuccess != "function") {
-      return reject(
-        new CustomError({
-          name: "CallbackException",
-          message: "O parametro onSuccess informado não é uma função",
-          body: {}
-        })
-      );
-    }
-    if (typeof onFail != "function") {
-      return reject(
-        new CustomError({
-          name: "CallbackException",
-          message: "O parametro onFail informado não é uma função",
-          body: {}
-        })
-      );
-    }
-    if (callBack.constructor.name === "AsyncFunction") {
-      socket.emit(data.id, await callBack(data));
-    } else {
-      socket.emit(data.id, callBack(data));
-    }
-    socket.on(`${data.id}:success`, () => {
-      socket.off(`${data.id}:success`);
-      socket.off(`${data.id}:fail`);
-      onSuccess(data);
-    });
-    socket.on(`${data.id}:fail`, error => {
-      socket.off(`${data.id}:success`);
-      socket.off(`${data.id}:fail`);
-      onFail(error);
-    });
+  
+    cb(next)
+    
   });
 }
 

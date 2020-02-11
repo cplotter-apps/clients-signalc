@@ -13,22 +13,15 @@
  * @property {Date} sent_at
  */
 
+/** @typedef {{status:number}}ResolvedToSendBase */
+/** @typedef {{id:string}}ResolveToReceiveBase */
 /**
- * @typedef ResolvedToSend
- * @property {{message:string, data:Object, name:string}} body
- * @property {number} status
- */
-
-/**
- * @callback sendCallback 
- * @param {ResolvedToSend} resolvedToSend
- * @returns {Promise<Object>}
- */
-
+ 
 /**
  * @callback execCallback
- * @param {{id:string, body:Object}} data
- * @param {sendCallback} send
+ * @param {ResolveToReceiveBase&{body:Object}} data
+ * @param {ResolvedToSendBase&{body:{message:string, data:Object, name:string}}} send
+ * @returns {Promise<Object>}
  */
 
 let io = require("socket.io-client");
@@ -38,16 +31,15 @@ const os = require("os");
 let free = require("free-memory");
 const CustomError = require("./CustomError");
 const Response = require("./Response");
-
 /**
  * @name config
  * @param {{url:string, auditorium:string, signals:string[], name:string}} param0
  */
-function config({url, auditorium, signals, name}={}) {
+function config({ url, auditorium, signals, name } = {}) {
   socket = io.connect(url, { reconnect: true });
   console.log(url);
   socket.on("connect", async () => {
-    console.log("Client Connected!",socket.id);
+    console.log("Client Connected!", socket.id);
     let hd = -1;
     let memory = -1;
     try {
@@ -60,7 +52,7 @@ function config({url, auditorium, signals, name}={}) {
       auditorium,
       sent_at: new Date(),
       signals,
-      status:{
+      status: {
         hd,
         memory,
         name
@@ -80,13 +72,12 @@ function enter(connector) {
 /**
  * @name exec
  * @param {string} signal
- * @param {execCallback} cb 
+ * @param {execCallback} cb
  */
 async function exec(signal, cb) {
   socket.on(signal, async data => {
-    
-    function next(resolved){
-      return new Promise((resolve, reject)=>{
+    function next(resolved) {
+      return new Promise((resolve, reject) => {
         socket.emit(data.id, resolved);
 
         socket.on(`${data.id}:success`, () => {
@@ -99,11 +90,10 @@ async function exec(signal, cb) {
           socket.off(`${data.id}:fail`);
           reject(error);
         });
-      })
+      });
     }
-  
-    cb(data, next)
-    
+
+    cb(data, next);
   });
 }
 

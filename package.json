@@ -1,6 +1,6 @@
 {
   "name": "services-signalc",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "For Signal-C Listeners",
   "main": "index.js",
   "scripts": {
@@ -11,8 +11,6 @@
   "dependencies": {
     "diskusage": "^1.1.3",
     "free-memory": "^1.0.0",
-    "install": "^0.13.0",
-    "npm": "^6.13.6",
     "socket.io-client": "^2.3.0"
   }
 }
